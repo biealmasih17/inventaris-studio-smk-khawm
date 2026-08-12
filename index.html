@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Inventaris Studio</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .table-responsive::-webkit-scrollbar { height: 6px; }
+    .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen pb-12 antialiased">
+
+  <!-- Header -->
+  <header class="bg-indigo-600 text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-white/10 p-2.5 rounded-lg text-white">
+          <i class="fa-solid fa-boxes-stacked text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Inventaris Studio</h1>
+          <p class="text-xs text-indigo-200">Sistem Manajemen & Pengecekan Kondisi Alat</p>
+        </div>
+      </div>
+      
+      <!-- Tombol Login/Logout Admin -->
+      <div>
+        <button id="btnLoginToggle" onclick="openLoginModal()" 
+          class="inline-flex items-center gap-2 bg-indigo-700 hover:bg-indigo-800 text-indigo-100 text-xs px-3.5 py-2 rounded-xl font-medium transition-all shadow-sm">
+          <i class="fa-solid fa-lock" id="loginIcon"></i>
+          <span id="loginText">Login Admin</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-6xl mx-auto px-4 mt-6 space-y-6">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="hidden fixed bottom-5 right-5 bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 z-50">
+      <i class="fa-solid fa-circle-check text-emerald-400"></i>
+      <span id="toastMsg">Kondisi barang berhasil diperbarui!</span>
+    </div>
+
+    <!-- Form Input Data Baru (Protected) -->
+    <section id="formSection" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-7">
+      <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-square-plus text-indigo-600 text-lg"></i>
+          <h2 class="text-lg font-semibold text-slate-800">Tambah Perangkat Baru</h2>
+        </div>
+        <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded-full">
+          <i class="fa-solid fa-user-check mr-1"></i> Akses Admin Aktif
+        </span>
+      </div>
+
+      <form id="inventarisForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Nama Alat</label>
+          <input type="text" id="namaAlat" required placeholder="Contoh: PC Desktop" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Merek</label>
+          <input type="text" id="merek" required placeholder="Contoh: HP / Sony / Canon" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Kategori</label>
+          <select id="kategori" required class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="">-- Pilih Kategori --</option>
+            <option value="Komputer & IT">Komputer & IT</option>
+            <option value="Visual / Kamera">Visual / Kamera</option>
+            <option value="Audio">Audio</option>
+            <option value="Video Production">Video Production</option>
+            <option value="Pencahayaan & Stabilizer">Pencahayaan & Stabilizer</option>
+            <option value="Daya & Kelistrikan">Daya & Kelistrikan</option>
+            <option value="Kabel & Adapter">Kabel & Adapter</option>
+            <option value="Fasilitas Studio">Fasilitas Studio</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Kondisi Awal</label>
+          <select id="kondisi" required class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="Baik">Baik</option>
+            <option value="Rusak Ringan">Rusak Ringan</option>
+            <option value="Rusak Parah">Rusak Parah</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Jumlah Unit</label>
+          <input type="number" id="jumlah" required min="1" placeholder="Contoh: 1" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Spesifikasi / Detail</label>
+          <input type="text" id="spesifikasi" placeholder="Contoh: Core i3 Gen 3, RAM 8 GB" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div class="sm:col-span-2 mt-2">
+          <button type="submit" id="btnSubmit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Simpan ke Google Sheets</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Stat Dashboard Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg font-bold shrink-0">
+          <i class="fa-solid fa-cubes"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Jenis Perangkat</p>
+          <p id="statJenis" class="text-xl font-bold text-slate-800">0</p>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold shrink-0">
+          <i class="fa-solid fa-warehouse"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Total Unit Fisik</p>
+          <p id="statTotalUnit" class="text-xl font-bold text-slate-800">0</p>
+        </div>
+      </div>
+
+      <div class="col-span-2 sm:col-span-1 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg font-bold shrink-0">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">Unit Perlu Perbaikan</p>
+          <p id="statRusak" class="text-xl font-bold text-slate-800">0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabel Rekapitulasi Data -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-7">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-check text-indigo-600 text-lg"></i>
+          <h2 class="text-lg font-semibold text-slate-800">Daftar & Check Kondisi Perangkat</h2>
+        </div>
+
+        <div class="relative w-full sm:w-64">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari nama, merek..." class="w-full pl-9 pr-3.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg outline-none">
+        </div>
+      </div>
+
+      <div id="status" class="py-12 text-center text-slate-400">
+        <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-indigo-600"></i>
+        <p class="text-sm font-medium">Memuat data dari Google Sheets...</p>
+      </div>
+
+      <!-- Table Wrapper -->
+      <div class="table-responsive overflow-x-auto rounded-xl border border-slate-200">
+        <table id="tabelData" class="w-full text-left text-xs sm:text-sm hidden">
+          <thead class="bg-slate-800 text-slate-200 uppercase text-[11px] font-semibold tracking-wider">
+            <tr>
+              <th class="py-3.5 px-4">Nama Alat</th>
+              <th class="py-3.5 px-4">Merek</th>
+              <th class="py-3.5 px-4">Kategori</th>
+              <th class="py-3.5 px-4 text-center">Check Kondisi</th>
+              <th class="py-3.5 px-4 text-center">Jumlah</th>
+              <th class="py-3.5 px-4">Spesifikasi</th>
+            </tr>
+          </thead>
+          <tbody id="tabelBody" class="divide-y divide-slate-100 bg-white"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal Login Admin -->
+  <div id="loginModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-xl">
+          <i class="fa-solid fa-user-shield"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800">Verifikasi Admin</h3>
+        <p class="text-xs text-slate-500">Masukkan PIN Admin untuk membuka fitur tambah data.</p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">PIN Admin</label>
+        <input type="password" id="pinInput" placeholder="Masukkan PIN..." 
+          class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-center tracking-widest text-lg font-bold">
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeLoginModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2 rounded-xl text-xs">
+          Batal
+        </button>
+        <button onclick="verifyPin()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl text-xs">
+          Verifikasi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // SCRIPT URL DARI GOOGLE APPS SCRIPT ANDA
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9QU84aNEnLbauwBTrjA_bwRT7IVXmR5_1ywqM6lJqgjUglxNKaeYM_YAilJXElPio/exec';
+    const ADMIN_PIN = "@dmin"; 
+    
+    let isAdmin = false;
+    let allData = [];
+
+    function openLoginModal() {
+      if (isAdmin) {
+        isAdmin = false;
+        document.getElementById('formSection').classList.add('hidden');
+        document.getElementById('loginText').innerText = "Login Admin";
+        document.getElementById('loginIcon').className = "fa-solid fa-lock";
+        document.getElementById('btnLoginToggle').className = "inline-flex items-center gap-2 bg-indigo-700 hover:bg-indigo-800 text-indigo-100 text-xs px-3.5 py-2 rounded-xl font-medium transition-all shadow-sm";
+      } else {
+        document.getElementById('loginModal').classList.remove('hidden');
+        document.getElementById('pinInput').value = '';
+        document.getElementById('pinInput').focus();
+      }
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.add('hidden');
+    }
+
+    function verifyPin() {
+      const pin = document.getElementById('pinInput').value;
+      if (pin === ADMIN_PIN) {
+        isAdmin = true;
+        document.getElementById('formSection').classList.remove('hidden');
+        document.getElementById('loginText').innerText = "Logout Admin";
+        document.getElementById('loginIcon').className = "fa-solid fa-arrow-right-from-bracket";
+        document.getElementById('btnLoginToggle').className = "inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white text-xs px-3.5 py-2 rounded-xl font-medium transition-all shadow-sm";
+        closeLoginModal();
+      } else {
+        alert("PIN Salah! Akses ditolak.");
+      }
+    }
+
+    // Ambil Data
+    async function loadData() {
+      try {
+        const response = await fetch(SCRIPT_URL);
+        allData = await response.json();
+        renderTable(allData);
+        document.getElementById('status').classList.add('hidden');
+        document.getElementById('tabelData').classList.remove('hidden');
+      } catch (err) {
+        document.getElementById('status').innerHTML = `<p class="text-xs text-rose-500 font-semibold">Gagal memuat data. Periksa pengaturan 'Anyone' pada Apps Script.</p>`;
+      }
+    }
+
+    // Render Tabel
+    function renderTable(data) {
+      const tbody = document.getElementById('tabelBody');
+      tbody.innerHTML = '';
+      let totalUnit = 0;
+      let totalRusak = 0;
+
+      if (!Array.isArray(data) || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 italic">Belum ada data.</td></tr>`;
+      } else {
+        data.forEach(item => {
+          const qty = parseInt(item.jumlah) || 0;
+          totalUnit += qty;
+
+          const currentKondisi = item.kondisi || "Baik";
+          if (currentKondisi !== "Baik") {
+            totalRusak += qty;
+          }
+
+          let colorClass = "bg-emerald-50 text-emerald-700 border-emerald-300";
+          if (currentKondisi === "Rusak Ringan") colorClass = "bg-amber-50 text-amber-700 border-amber-300";
+          if (currentKondisi === "Rusak Parah") colorClass = "bg-rose-50 text-rose-700 border-rose-300";
+
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50/80 transition-colors';
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">${item.namaAlat}</td>
+            <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${item.merek || '-'}</td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                ${item.kategori || '-'}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-center whitespace-nowrap">
+              <select onchange="updateKondisiDirect(this, ${item.rowIndex})" 
+                class="px-2.5 py-1 rounded-lg text-xs font-bold border outline-none cursor-pointer transition-all ${colorClass}">
+                <option value="Baik" ${currentKondisi === 'Baik' ? 'selected' : ''}> Baik</option>
+                <option value="Rusak Ringan" ${currentKondisi === 'Rusak Ringan' ? 'selected' : ''}> Rusak Ringan</option>
+                <option value="Rusak Parah" ${currentKondisi === 'Rusak Parah' ? 'selected' : ''}> Rusak Parah</option>
+              </select>
+            </td>
+            <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${qty} unit</td>
+            <td class="py-3 px-4 text-slate-500 text-xs">${item.spesifikasi || '-'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      document.getElementById('statJenis').innerText = Array.isArray(data) ? data.length : 0;
+      document.getElementById('statTotalUnit').innerText = totalUnit;
+      document.getElementById('statRusak').innerText = totalRusak;
+    }
+
+    // Update Kondisi Langsung
+    async function updateKondisiDirect(selectElement, rowIndex) {
+      const newKondisi = selectElement.value;
+
+      selectElement.disabled = true;
+      selectElement.style.opacity = '0.5';
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: "updateKondisi",
+            rowIndex: rowIndex,
+            kondisi: newKondisi
+          })
+        });
+
+        const res = await response.json();
+        if (res.status === "success") {
+          showToast(`Kondisi diperbarui ke: ${newKondisi}`);
+          await loadData();
+        } else {
+          alert("Gagal mengubah kondisi.");
+        }
+      } catch (err) {
+        alert("Terjadi kesalahan jaringan.");
+      } finally {
+        selectElement.disabled = false;
+        selectElement.style.opacity = '1';
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    function filterTable() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = allData.filter(item => 
+        (item.namaAlat && item.namaAlat.toLowerCase().includes(query)) ||
+        (item.merek && item.merek.toLowerCase().includes(query)) ||
+        (item.kategori && item.kategori.toLowerCase().includes(query)) ||
+        (item.kondisi && item.kondisi.toLowerCase().includes(query))
+      );
+      renderTable(filtered);
+    }
+
+    // Submit Form
+    document.getElementById('inventarisForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!isAdmin) {
+        alert("Sesi Anda berakhir. Silakan login kembali.");
+        return;
+      }
+      
+      const btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Menyimpan...</span>`;
+
+      const payload = {
+        namaAlat: document.getElementById('namaAlat').value,
+        merek: document.getElementById('merek').value,
+        kategori: document.getElementById('kategori').value,
+        kondisi: document.getElementById('kondisi').value,
+        jumlah: document.getElementById('jumlah').value,
+        spesifikasi: document.getElementById('spesifikasi').value
+      };
+
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        document.getElementById('inventarisForm').reset();
+        await loadData();
+      } catch (err) {
+        alert('Gagal menyimpan data.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Simpan ke Google Sheets</span>`;
+      }
+    });
+
+    loadData();
+  </script>
+
+</body>
+</html>
