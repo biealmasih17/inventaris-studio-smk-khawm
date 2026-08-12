@@ -19,6 +19,7 @@
     .table-responsive::-webkit-scrollbar { height: 6px; }
     .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
+  <script src="Code.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-12 antialiased">
 
@@ -162,9 +163,15 @@
           <h2 class="text-lg font-semibold text-slate-800">Daftar & Check Kondisi Perangkat</h2>
         </div>
 
-        <div class="relative w-full sm:w-64">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-          <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari nama, merek..." class="w-full pl-9 pr-3.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg outline-none">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full justify-end">
+          <div class="relative w-full sm:w-64">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari nama, merek..." class="w-full pl-9 pr-3.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg outline-none">
+          </div>
+          <button id="btnExport" onclick="exportDataToExcel(displayedData)" disabled class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3.5 py-2 rounded-xl font-semibold transition-all shadow-sm">
+            <i class="fa-solid fa-file-excel"></i>
+            Export ke Excel
+          </button>
         </div>
       </div>
 
@@ -228,6 +235,7 @@
     
     let isAdmin = false;
     let allData = [];
+    let displayedData = [];
 
     function openLoginModal() {
       if (isAdmin) {
@@ -269,13 +277,16 @@
         renderTable(allData);
         document.getElementById('status').classList.add('hidden');
         document.getElementById('tabelData').classList.remove('hidden');
+        document.getElementById('btnExport').disabled = !Array.isArray(allData) || allData.length === 0;
       } catch (err) {
         document.getElementById('status').innerHTML = `<p class="text-xs text-rose-500 font-semibold">Gagal memuat data. Periksa pengaturan 'Anyone' pada Apps Script.</p>`;
+        document.getElementById('btnExport').disabled = true;
       }
     }
 
     // Render Tabel
     function renderTable(data) {
+      displayedData = Array.isArray(data) ? data : [];
       const tbody = document.getElementById('tabelBody');
       tbody.innerHTML = '';
       let totalUnit = 0;
