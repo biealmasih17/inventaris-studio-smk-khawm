@@ -51,14 +51,30 @@ function buildExcelHtml(rows) {
 }
 
 function createExcelDataTable(data) {
+  // Support row format as either objects ({idAset,..}) or arrays [id, nama, merek, kategori, jumlah, spesifikasi, kondisi]
   const headerRow = EXCEL_EXPORT_FIELDS.map(field => field.label);
-  const dataRows = data.map(item =>
-    EXCEL_EXPORT_FIELDS.map(field => {
-      const value = item[field.key];
-      if (field.key === 'jumlah') return Number(value) || 0;
-      return value || "";
-    })
-  );
+  const dataRows = data.map(item => {
+    if (Array.isArray(item)) {
+      // Map by index order
+      const row = [
+        item[0] || "",
+        item[1] || "",
+        item[2] || "",
+        item[3] || "",
+        // jumlah: normalize to number
+        Number(String(item[4] || '').replace(/[^0-9]/g, '')) || 0,
+        item[5] || "",
+        item[6] || ""
+      ];
+      return row;
+    } else {
+      return EXCEL_EXPORT_FIELDS.map(field => {
+        const value = item[field.key];
+        if (field.key === 'jumlah') return Number(value) || 0;
+        return value || "";
+      });
+    }
+  });
   return [headerRow, ...dataRows];
 }
 

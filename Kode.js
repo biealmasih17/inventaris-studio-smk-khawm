@@ -174,17 +174,13 @@ function doGet() {
       });
     })
     .map(function(row, index) {
+      // Ensure we always return exactly 7 columns in order:
+      // [0] ID Aset, [1] Nama Alat, [2] Merek, [3] Kategori, [4] Jumlah, [5] Spesifikasi, [6] Kondisi
       var normalizedRow = row.length >= 7 ? row.slice(0, 7) : row.concat(Array(7 - row.length).fill(''));
-      return {
-        rowIndex: index + 2,
-        idAset: normalizeSheetValue(normalizedRow[0]),
-        namaAlat: normalizedRow[1] || '',
-        merek: normalizedRow[2] || '',
-        kategori: normalizedRow[3] || '',
-        jumlah: parseInt(normalizedRow[4], 10) || 0,
-        spesifikasi: normalizedRow[5] || '',
-        kondisi: normalizedRow[6] || 'Baik'
-      };
+      var cleanRow = normalizedRow.map(function(cell) { return normalizeSheetValue(cell || ''); });
+      // Ensure jumlah stays as-is (string/number) so frontend can clean if it contains 'unit'
+      if (cleanRow[4] === '') cleanRow[4] = '0';
+      return cleanRow;
     });
 
   return ContentService.createTextOutput(JSON.stringify(result))

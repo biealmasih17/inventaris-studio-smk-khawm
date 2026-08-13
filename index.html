@@ -287,6 +287,7 @@
 
     // Render Tabel
     function renderTable(data) {
+      // data is expected to be an array of arrays: [ID, Nama, Merek, Kategori, Jumlah, Spesifikasi, Kondisi]
       displayedData = Array.isArray(data) ? data : [];
       const tbody = document.getElementById('tabelBody');
       tbody.innerHTML = '';
@@ -299,49 +300,57 @@
         const uniqueNames = new Set();
 
         data.forEach(item => {
-          const qty = parseInt(item.jumlah) || 0;
+          // item can be an array or object; normalize to array
+          var row = Array.isArray(item) ? item : [item.idAset, item.namaAlat, item.merek, item.kategori, item.jumlah, item.spesifikasi, item.kondisi];
+
+          var idAset = row[0] || '';
+          var namaAlat = row[1] || '';
+          var merek = row[2] || '';
+          var kategori = row[3] || '';
+          var jumlahRaw = row[4] || '';
+          var spesifikasi = row[5] || '';
+          var kondisiVal = row[6] || 'Baik';
+
+          // Clean jumlah: remove non-digits so numbers like '1 unit' become '1'
+          var cleanedJumlah = String(jumlahRaw).replace(/[^0-9]/g, '');
+          var qty = parseInt(cleanedJumlah, 10) || 0;
           totalUnit += qty;
 
-          const currentKondisi = item.kondisi || "Baik";
-          if (currentKondisi !== "Baik") {
-            totalRusak += qty;
-          }
+          if (kondisiVal !== 'Baik') totalRusak += qty;
 
-          if (item.namaAlat) {
-            uniqueNames.add(item.namaAlat.trim());
-          }
+          if (namaAlat) uniqueNames.add(namaAlat.trim());
 
           let colorClass = "bg-emerald-50 text-emerald-700 border-emerald-300";
-          if (currentKondisi === "Rusak Ringan") colorClass = "bg-amber-50 text-amber-700 border-amber-300";
-          if (currentKondisi === "Rusak Parah") colorClass = "bg-rose-50 text-rose-700 border-rose-300";
+          if (kondisiVal === "Rusak Ringan") colorClass = "bg-amber-50 text-amber-700 border-amber-300";
+          if (kondisiVal === "Rusak Parah") colorClass = "bg-rose-50 text-rose-700 border-rose-300";
 
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-50/80 transition-colors';
           tr.innerHTML = `
-            <td class="py-3 px-4 font-mono text-[11px] font-semibold text-slate-700 whitespace-nowrap">${item.idAset || '-'}</td>
-            <td class="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">${item.namaAlat || '-'}</td>
-            <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${item.merek || '-'}</td>
+            <td class="py-3 px-4 font-mono text-[11px] font-semibold text-slate-700 whitespace-nowrap">${idAset || '-'}</td>
+            <td class="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">${namaAlat || '-'}</td>
+            <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${merek || '-'}</td>
             <td class="py-3 px-4 whitespace-nowrap">
               <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                ${item.kategori || '-' }
+                ${kategori || '-' }
               </span>
             </td>
             <td class="py-3 px-4 text-center whitespace-nowrap">
-              <select onchange="updateKondisiDirect(this, '${item.idAset || ''}')" 
+              <select onchange="updateKondisiDirect(this, '${idAset || ''}')" 
                 class="px-2.5 py-1 rounded-lg text-xs font-bold border outline-none cursor-pointer transition-all ${colorClass}">
-                <option value="Baik" ${currentKondisi === 'Baik' ? 'selected' : ''}> Baik</option>
-                <option value="Rusak Ringan" ${currentKondisi === 'Rusak Ringan' ? 'selected' : ''}> Rusak Ringan</option>
-                <option value="Rusak Parah" ${currentKondisi === 'Rusak Parah' ? 'selected' : ''}> Rusak Parah</option>
+                <option value="Baik" ${kondisiVal === 'Baik' ? 'selected' : ''}> Baik</option>
+                <option value="Rusak Ringan" ${kondisiVal === 'Rusak Ringan' ? 'selected' : ''}> Rusak Ringan</option>
+                <option value="Rusak Parah" ${kondisiVal === 'Rusak Parah' ? 'selected' : ''}> Rusak Parah</option>
               </select>
             </td>
             <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${qty} unit</td>
-            <td class="py-3 px-4 text-slate-500 text-xs">${item.spesifikasi || '-'}</td>
+            <td class="py-3 px-4 text-slate-500 text-xs">${spesifikasi || '-'}</td>
           `;
           tbody.appendChild(tr);
         });
       }
 
-      document.getElementById('statJenis').innerText = Array.isArray(data) ? new Set(data.map(item => (item.namaAlat || '').trim()).filter(Boolean)).size : 0;
+      document.getElementById('statJenis').innerText = Array.isArray(data) ? new Set(data.map(item => (Array.isArray(item) ? (item[1] || '') : (item.namaAlat || '') ).trim()).filter(Boolean)).size : 0;
       document.getElementById('statTotalUnit').innerText = totalUnit;
       document.getElementById('statRusak').innerText = totalRusak;
     }
@@ -387,13 +396,16 @@
 
     function filterTable() {
       const query = document.getElementById('searchInput').value.toLowerCase();
-      const filtered = allData.filter(item => 
-        (item.idAset && item.idAset.toLowerCase().includes(query)) ||
-        (item.namaAlat && item.namaAlat.toLowerCase().includes(query)) ||
-        (item.merek && item.merek.toLowerCase().includes(query)) ||
-        (item.kategori && item.kategori.toLowerCase().includes(query)) ||
-        (item.kondisi && item.kondisi.toLowerCase().includes(query))
-      );
+      const filtered = allData.filter(item => {
+        var row = Array.isArray(item) ? item : [item.idAset, item.namaAlat, item.merek, item.kategori, item.jumlah, item.spesifikasi, item.kondisi];
+        return (
+          (row[0] && row[0].toLowerCase().includes(query)) ||
+          (row[1] && row[1].toLowerCase().includes(query)) ||
+          (row[2] && row[2].toLowerCase().includes(query)) ||
+          (row[3] && row[3].toLowerCase().includes(query)) ||
+          (row[6] && row[6].toLowerCase().includes(query))
+        );
+      });
       renderTable(filtered);
     }
 
