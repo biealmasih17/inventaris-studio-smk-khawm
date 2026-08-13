@@ -300,25 +300,23 @@
         const uniqueNames = new Set();
 
         data.forEach(item => {
-          // item can be an array or object; normalize to array
-          var row = Array.isArray(item) ? item : [item.idAset, item.namaAlat, item.merek, item.kategori, item.jumlah, item.spesifikasi, item.kondisi];
+          var row = Array.isArray(item) ? item : [item.idAset || item[0], item.namaAlat || item[1], item.merek || item[2], item.kategori || item[3], item.jumlah || item[4], item.spesifikasi || item[5], item.kondisi || item[6]];
 
-          var idAset = row[0] || '';
-          var namaAlat = row[1] || '';
-          var merek = row[2] || '';
-          var kategori = row[3] || '';
-          var jumlahRaw = row[4] || '';
-          var spesifikasi = row[5] || '';
-          var kondisiVal = row[6] || 'Baik';
+          const idAset = row[0] || row.idAset || '-';
+          const namaAlat = row[1] || row.namaAlat || '-';
+          const merek = row[2] || row.merek || '-';
+          const kategori = row[3] || row.kategori || '-';
+          const jumlah = row[4] || row.jumlah || '1 unit';
+          const spesifikasi = row[5] || row.spesifikasi || '-';
+          const kondisiVal = row[6] || row.kondisi || 'Baik';
 
-          // Clean jumlah: remove non-digits so numbers like '1 unit' become '1'
-          var cleanedJumlah = String(jumlahRaw).replace(/[^0-9]/g, '');
-          var qty = parseInt(cleanedJumlah, 10) || 0;
+          const cleanedJumlah = String(jumlah).replace(/[^0-9]/g, '');
+          const qty = parseInt(cleanedJumlah, 10) || 0;
           totalUnit += qty;
 
           if (kondisiVal !== 'Baik') totalRusak += qty;
 
-          if (namaAlat) uniqueNames.add(namaAlat.trim());
+          if (namaAlat && namaAlat !== '-') uniqueNames.add(String(namaAlat).trim());
 
           let colorClass = "bg-emerald-50 text-emerald-700 border-emerald-300";
           if (kondisiVal === "Rusak Ringan") colorClass = "bg-amber-50 text-amber-700 border-amber-300";
@@ -327,30 +325,33 @@
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-50/80 transition-colors';
           tr.innerHTML = `
-            <td class="py-3 px-4 font-mono text-[11px] font-semibold text-slate-700 whitespace-nowrap">${idAset || ''}</td>
-            <td class="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">${namaAlat || ''}</td>
-            <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${merek || ''}</td>
+            <td class="py-3 px-4 font-mono text-[11px] font-semibold text-slate-700 whitespace-nowrap">${idAset}</td>
+            <td class="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">${namaAlat}</td>
+            <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${merek}</td>
             <td class="py-3 px-4 whitespace-nowrap">
               <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                ${kategori || ''}
+                ${kategori}
               </span>
             </td>
             <td class="py-3 px-4 text-center whitespace-nowrap">
-              <select onchange="updateKondisiDirect(this, '${idAset || ''}')" 
+              <select onchange="updateKondisiDirect(this, '${idAset}')" 
                 class="px-2.5 py-1 rounded-lg text-xs font-bold border outline-none cursor-pointer transition-all ${colorClass}">
                 <option value="Baik" ${kondisiVal === 'Baik' ? 'selected' : ''}> Baik</option>
                 <option value="Rusak Ringan" ${kondisiVal === 'Rusak Ringan' ? 'selected' : ''}> Rusak Ringan</option>
                 <option value="Rusak Parah" ${kondisiVal === 'Rusak Parah' ? 'selected' : ''}> Rusak Parah</option>
               </select>
             </td>
-            <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${jumlahRaw || ''}</td>
-            <td class="py-3 px-4 text-slate-500 text-xs">${spesifikasi || ''}</td>
+            <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${jumlah}</td>
+            <td class="py-3 px-4 text-slate-500 text-xs">${spesifikasi}</td>
           `;
           tbody.appendChild(tr);
         });
       }
 
-      document.getElementById('statJenis').innerText = Array.isArray(data) ? new Set(data.map(item => (Array.isArray(item) ? (item[1] || '') : (item.namaAlat || '') ).trim()).filter(Boolean)).size : 0;
+      document.getElementById('statJenis').innerText = Array.isArray(data) ? new Set(data.map(item => {
+        const row = Array.isArray(item) ? item : [item.idAset || item[0], item.namaAlat || item[1], item.merek || item[2], item.kategori || item[3], item.jumlah || item[4], item.spesifikasi || item[5], item.kondisi || item[6]];
+        return String(row[1] || '').trim();
+      }).filter(Boolean)).size : 0;
       document.getElementById('statTotalUnit').innerText = totalUnit;
       document.getElementById('statRusak').innerText = totalRusak;
     }
@@ -397,13 +398,13 @@
     function filterTable() {
       const query = document.getElementById('searchInput').value.toLowerCase();
       const filtered = allData.filter(item => {
-        var row = Array.isArray(item) ? item : [item.idAset, item.namaAlat, item.merek, item.kategori, item.jumlah, item.spesifikasi, item.kondisi];
+        const row = Array.isArray(item) ? item : [item.idAset || item[0], item.namaAlat || item[1], item.merek || item[2], item.kategori || item[3], item.jumlah || item[4], item.spesifikasi || item[5], item.kondisi || item[6]];
         return (
-          (row[0] && row[0].toLowerCase().includes(query)) ||
-          (row[1] && row[1].toLowerCase().includes(query)) ||
-          (row[2] && row[2].toLowerCase().includes(query)) ||
-          (row[3] && row[3].toLowerCase().includes(query)) ||
-          (row[6] && row[6].toLowerCase().includes(query))
+          (row[0] && String(row[0]).toLowerCase().includes(query)) ||
+          (row[1] && String(row[1]).toLowerCase().includes(query)) ||
+          (row[2] && String(row[2]).toLowerCase().includes(query)) ||
+          (row[3] && String(row[3]).toLowerCase().includes(query)) ||
+          (row[6] && String(row[6]).toLowerCase().includes(query))
         );
       });
       renderTable(filtered);
