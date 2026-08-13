@@ -327,12 +327,12 @@
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-50/80 transition-colors';
           tr.innerHTML = `
-            <td class="py-3 px-4 font-mono text-[11px] font-semibold text-slate-700 whitespace-nowrap">${idAset || '-'}</td>
-            <td class="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">${namaAlat || '-'}</td>
-            <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${merek || '-'}</td>
+            <td class="py-3 px-4 font-mono text-[11px] font-semibold text-slate-700 whitespace-nowrap">${idAset || ''}</td>
+            <td class="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">${namaAlat || ''}</td>
+            <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${merek || ''}</td>
             <td class="py-3 px-4 whitespace-nowrap">
               <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                ${kategori || '-' }
+                ${kategori || ''}
               </span>
             </td>
             <td class="py-3 px-4 text-center whitespace-nowrap">
@@ -343,8 +343,8 @@
                 <option value="Rusak Parah" ${kondisiVal === 'Rusak Parah' ? 'selected' : ''}> Rusak Parah</option>
               </select>
             </td>
-            <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${qty} unit</td>
-            <td class="py-3 px-4 text-slate-500 text-xs">${spesifikasi || '-'}</td>
+            <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${jumlahRaw || ''}</td>
+            <td class="py-3 px-4 text-slate-500 text-xs">${spesifikasi || ''}</td>
           `;
           tbody.appendChild(tr);
         });
