@@ -1,10 +1,11 @@
 const EXCEL_EXPORT_FIELDS = [
+  { label: "ID Aset", key: "idAset" },
   { label: "Nama Alat", key: "namaAlat" },
   { label: "Merek", key: "merek" },
   { label: "Kategori", key: "kategori" },
-  { label: "Kondisi", key: "kondisi" },
   { label: "Jumlah", key: "jumlah" },
-  { label: "Spesifikasi", key: "spesifikasi" }
+  { label: "Spesifikasi", key: "spesifikasi" },
+  { label: "Kondisi", key: "kondisi" }
 ];
 
 function escapeHtml(text) {
@@ -52,7 +53,11 @@ function buildExcelHtml(rows) {
 function createExcelDataTable(data) {
   const headerRow = EXCEL_EXPORT_FIELDS.map(field => field.label);
   const dataRows = data.map(item =>
-    EXCEL_EXPORT_FIELDS.map(field => item[field.key] || "")
+    EXCEL_EXPORT_FIELDS.map(field => {
+      const value = item[field.key];
+      if (field.key === 'jumlah') return Number(value) || 0;
+      return value || "";
+    })
   );
   return [headerRow, ...dataRows];
 }

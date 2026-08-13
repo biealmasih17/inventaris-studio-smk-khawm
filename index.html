@@ -185,6 +185,7 @@
         <table id="tabelData" class="w-full text-left text-xs sm:text-sm hidden">
           <thead class="bg-slate-800 text-slate-200 uppercase text-[11px] font-semibold tracking-wider">
             <tr>
+              <th class="py-3.5 px-4">ID Aset</th>
               <th class="py-3.5 px-4">Nama Alat</th>
               <th class="py-3.5 px-4">Merek</th>
               <th class="py-3.5 px-4">Kategori</th>
@@ -293,8 +294,10 @@
       let totalRusak = 0;
 
       if (!Array.isArray(data) || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 italic">Belum ada data.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 italic">Belum ada data.</td></tr>`;
       } else {
+        const uniqueNames = new Set();
+
         data.forEach(item => {
           const qty = parseInt(item.jumlah) || 0;
           totalUnit += qty;
@@ -304,6 +307,10 @@
             totalRusak += qty;
           }
 
+          if (item.namaAlat) {
+            uniqueNames.add(item.namaAlat.trim());
+          }
+
           let colorClass = "bg-emerald-50 text-emerald-700 border-emerald-300";
           if (currentKondisi === "Rusak Ringan") colorClass = "bg-amber-50 text-amber-700 border-amber-300";
           if (currentKondisi === "Rusak Parah") colorClass = "bg-rose-50 text-rose-700 border-rose-300";
@@ -311,15 +318,16 @@
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-50/80 transition-colors';
           tr.innerHTML = `
-            <td class="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">${item.namaAlat}</td>
+            <td class="py-3 px-4 font-mono text-[11px] font-semibold text-slate-700 whitespace-nowrap">${item.idAset || '-'}</td>
+            <td class="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">${item.namaAlat || '-'}</td>
             <td class="py-3 px-4 text-slate-600 whitespace-nowrap">${item.merek || '-'}</td>
             <td class="py-3 px-4 whitespace-nowrap">
               <span class="inline-block px-2.5 py-1 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                ${item.kategori || '-'}
+                ${item.kategori || '-' }
               </span>
             </td>
             <td class="py-3 px-4 text-center whitespace-nowrap">
-              <select onchange="updateKondisiDirect(this, ${item.rowIndex})" 
+              <select onchange="updateKondisiDirect(this, '${item.idAset || ''}')" 
                 class="px-2.5 py-1 rounded-lg text-xs font-bold border outline-none cursor-pointer transition-all ${colorClass}">
                 <option value="Baik" ${currentKondisi === 'Baik' ? 'selected' : ''}> Baik</option>
                 <option value="Rusak Ringan" ${currentKondisi === 'Rusak Ringan' ? 'selected' : ''}> Rusak Ringan</option>
@@ -333,13 +341,13 @@
         });
       }
 
-      document.getElementById('statJenis').innerText = Array.isArray(data) ? data.length : 0;
+      document.getElementById('statJenis').innerText = Array.isArray(data) ? new Set(data.map(item => (item.namaAlat || '').trim()).filter(Boolean)).size : 0;
       document.getElementById('statTotalUnit').innerText = totalUnit;
       document.getElementById('statRusak').innerText = totalRusak;
     }
 
     // Update Kondisi Langsung
-    async function updateKondisiDirect(selectElement, rowIndex) {
+    async function updateKondisiDirect(selectElement, idAset) {
       const newKondisi = selectElement.value;
 
       selectElement.disabled = true;
@@ -350,7 +358,7 @@
           method: 'POST',
           body: JSON.stringify({
             action: "updateKondisi",
-            rowIndex: rowIndex,
+            idAset: idAset,
             kondisi: newKondisi
           })
         });
@@ -380,6 +388,7 @@
     function filterTable() {
       const query = document.getElementById('searchInput').value.toLowerCase();
       const filtered = allData.filter(item => 
+        (item.idAset && item.idAset.toLowerCase().includes(query)) ||
         (item.namaAlat && item.namaAlat.toLowerCase().includes(query)) ||
         (item.merek && item.merek.toLowerCase().includes(query)) ||
         (item.kategori && item.kategori.toLowerCase().includes(query)) ||
@@ -410,15 +419,20 @@
       };
 
       try {
-        await fetch(SCRIPT_URL, {
+        const response = await fetch(SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify(payload)
         });
+        const res = await response.json();
+
+        if (res.status !== 'success') {
+          throw new Error(res.message || 'Gagal menyimpan data.');
+        }
 
         document.getElementById('inventarisForm').reset();
         await loadData();
       } catch (err) {
-        alert('Gagal menyimpan data.');
+        alert(err.message || 'Gagal menyimpan data.');
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>Simpan ke Google Sheets</span>`;
