@@ -277,6 +277,15 @@
     // Ambil Data
     async function loadData() {
       try {
+        // Jika Supabase terkonfigurasi, gunakan Supabase sebagai sumber data
+        if (window.supabaseClient) {
+          await fetchInventoryData();
+          document.getElementById('status').classList.add('hidden');
+          document.getElementById('tabelData').classList.remove('hidden');
+          document.getElementById('btnExport').disabled = !Array.isArray(allData) || allData.length === 0;
+          return;
+        }
+
         const response = await fetch(SCRIPT_URL);
         allData = await response.json();
         renderTable(allData);
@@ -284,8 +293,53 @@
         document.getElementById('tabelData').classList.remove('hidden');
         document.getElementById('btnExport').disabled = !Array.isArray(allData) || allData.length === 0;
       } catch (err) {
-        document.getElementById('status').innerHTML = `<p class="text-xs text-rose-500 font-semibold">Gagal memuat data. Periksa pengaturan 'Anyone' pada Apps Script.</p>`;
+        document.getElementById('status').innerHTML = `<p class="text-xs text-rose-500 font-semibold">Gagal memuat data. Periksa pengaturan 'Anyone' pada Apps Script atau koneksi Supabase.</p>`;
         document.getElementById('btnExport').disabled = true;
+      }
+    }
+
+    // Fetch data from Supabase if available
+    async function fetchInventoryData() {
+      if (!window.supabaseClient) {
+        console.warn('Supabase client not available. Falling back to Apps Script.');
+        return;
+      }
+
+      try {
+        const { data, error } = await window.supabaseClient
+          .from('inventory')
+          .select('*')
+          .order('id', { ascending: true });
+
+        if (error) throw error;
+
+        // Map supabase rows (objects) to array shape expected by renderTable: [id, nama, merek, kategori, jumlah, spesifikasi, kondisi]
+        allData = (data || []).map(row => {
+          const idAset = row.id || row.id_aset || row.idAset || '';
+          const namaAlat = row.nama_alat || row.namaAlat || row.nama || '';
+          const merek = row.merek || row.brand || '';
+          const kategori = row.kategori || row.category || '';
+          // jumlah: if numeric, append ' unit' to match existing display format
+          let jumlahVal = '';
+          if (row.jumlah !== undefined && row.jumlah !== null) {
+            jumlahVal = String(row.jumlah);
+            // append unit if original sheet uses 'unit'
+            if (!jumlahVal.match(/unit/i)) jumlahVal = jumlahVal + ' unit';
+          } else if (row.jumlah_txt) {
+            jumlahVal = String(row.jumlah_txt);
+          } else {
+            jumlahVal = '1 unit';
+          }
+          const spesifikasi = row.spesifikasi || row.spec || '';
+          const kondisi = row.kondisi || row.status || 'Baik';
+
+          return [idAset, namaAlat, merek, kategori, jumlahVal, spesifikasi, kondisi];
+        });
+
+        renderTable(allData);
+      } catch (err) {
+        console.error('Gagal mengambil data inventaris dari Supabase:', err.message || err);
+        throw err;
       }
     }
 
