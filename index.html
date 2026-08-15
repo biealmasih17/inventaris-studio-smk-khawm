@@ -469,18 +469,48 @@
     }
 
     // Submit Form
+    async function saveInventoryItem(itemData) {
+      // Provided supabase upsert helper
+      try {
+        if (!window.supabaseClient) throw new Error('Supabase client not available');
+
+        const { data, error } = await window.supabaseClient
+          .from('inventory')
+          .upsert([
+            {
+              id: itemData.id, // ID Aset
+              name: itemData.name, // Nama Alat
+              brand: itemData.brand, // Merek
+              category: itemData.category, // Kategori
+              quantity: itemData.quantity, // Jumlah
+              specifications: itemData.specs, // Spesifikasi
+              condition: itemData.condition // Kondisi
+            }
+          ]);
+
+        if (error) throw error;
+
+        alert('Data aset berhasil disimpan!');
+        await fetchInventoryData();
+        return { status: 'success', data };
+      } catch (err) {
+        console.error('Gagal menyimpan data:', err.message || err);
+        return { status: 'error', message: err.message || String(err) };
+      }
+    }
+
     document.getElementById('inventarisForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       if (!isAdmin) {
         alert("Sesi Anda berakhir. Silakan login kembali.");
         return;
       }
-      
+
       const btn = document.getElementById('btnSubmit');
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Menyimpan...</span>`;
 
-      const payload = {
+      const formValues = {
         namaAlat: document.getElementById('namaAlat').value,
         merek: document.getElementById('merek').value,
         kategori: document.getElementById('kategori').value,
@@ -490,14 +520,37 @@
       };
 
       try {
-        const response = await fetch(SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        const res = await response.json();
+        if (window.supabaseClient) {
+          // Map to the saveInventoryItem shape
+          const itemData = {
+            id: '', // for new items leave empty or generate client-side if you have logic
+            name: formValues.namaAlat,
+            brand: formValues.merek,
+            category: formValues.kategori,
+            quantity: Number(String(formValues.jumlah).replace(/[^0-9]/g, '')) || 1,
+            specs: formValues.spesifikasi,
+            condition: formValues.kondisi || 'Baik'
+          };
 
-        if (res.status !== 'success') {
-          throw new Error(res.message || 'Gagal menyimpan data.');
+          const res = await saveInventoryItem(itemData);
+          if (res.status !== 'success') throw new Error(res.message || 'Gagal menyimpan data ke Supabase');
+        } else {
+          // Fallback to Apps Script
+          const payload = {
+            namaAlat: formValues.namaAlat,
+            merek: formValues.merek,
+            kategori: formValues.kategori,
+            kondisi: formValues.kondisi,
+            jumlah: formValues.jumlah,
+            spesifikasi: formValues.spesifikasi
+          };
+
+          const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+          const res = await response.json();
+          if (res.status !== 'success') throw new Error(res.message || 'Gagal menyimpan data.');
         }
 
         document.getElementById('inventarisForm').reset();
