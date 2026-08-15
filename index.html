@@ -400,7 +400,11 @@
               </select>
             </td>
             <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-slate-700">${jumlah}</td>
-            <td class="py-3 px-4 text-slate-500 text-xs">${spesifikasi}</td>
+            <td class="py-3 px-4 text-slate-500 text-xs">${spesifikasi}
+              <button onclick="deleteInventoryItem('${idAset}')" title="Hapus aset" class="ml-2 inline-flex items-center justify-center text-rose-600 hover:text-white hover:bg-rose-600 rounded-full p-1 text-xs">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
           `;
           tbody.appendChild(tr);
         });
@@ -451,6 +455,32 @@
       document.getElementById('toastMsg').innerText = msg;
       toast.classList.remove('hidden');
       setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // Delete inventory item (Supabase only)
+    async function deleteInventoryItem(assetId) {
+      if (!assetId) return alert('ID aset tidak valid.');
+      if (!confirm(`Yakin ingin menghapus aset dengan ID ${assetId}?`)) return;
+
+      if (!window.supabaseClient) {
+        alert('Penghapusan hanya didukung saat Supabase dikonfigurasi.');
+        return;
+      }
+
+      try {
+        const { error } = await window.supabaseClient
+          .from('inventory')
+          .delete()
+          .eq('id', assetId);
+
+        if (error) throw error;
+
+        showToast('Data berhasil dihapus!');
+        await fetchInventoryData();
+      } catch (err) {
+        console.error('Gagal menghapus data:', err);
+        alert('Gagal menghapus data: ' + (err.message || err));
+      }
     }
 
     function filterTable() {
