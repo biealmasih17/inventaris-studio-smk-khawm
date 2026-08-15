@@ -1,0 +1,5 @@
+# Local Supabase config (contains secrets) - DO NOT COMMIT
+supabase-config.js
+
+# Node modules (if any)
+node_modules/
