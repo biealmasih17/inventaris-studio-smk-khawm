@@ -306,15 +306,24 @@
       }
 
       try {
-        const { data, error } = await window.supabaseClient
+        // Try ordering by typical id column; if the column doesn't exist, fall back to no-order select
+        let rowsResp = await window.supabaseClient
           .from('inventory')
           .select('*')
           .order('id', { ascending: true });
 
-        if (error) throw error;
+        let rowsData;
+        if (rowsResp.error) {
+          console.warn('Ordering by id failed, retrying without order:', rowsResp.error.message || rowsResp.error);
+          const alt = await window.supabaseClient.from('inventory').select('*');
+          if (alt.error) throw alt.error;
+          rowsData = alt.data || [];
+        } else {
+          rowsData = rowsResp.data || [];
+        }
 
         // Map supabase rows (objects) to array shape expected by renderTable: [id, nama, merek, kategori, jumlah, spesifikasi, kondisi]
-        allData = (data || []).map(row => {
+        allData = (rowsData || []).map(row => {
           const idAset = row.id || row.id_aset || row.idAset || '';
           const namaAlat = row.nama_alat || row.namaAlat || row.nama || '';
           const merek = row.merek || row.brand || '';
